@@ -27,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean errorState = false;
     private boolean isAdvancedMode = false;
 
+    private LinearLayout layoutAdvanced3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,11 +58,13 @@ public class MainActivity extends AppCompatActivity {
         btnToggleMode = findViewById(R.id.btnToggleMode);
         layoutAdvanced1 = findViewById(R.id.layoutAdvanced1);
         layoutAdvanced2 = findViewById(R.id.layoutAdvanced2);
+        layoutAdvanced3 = findViewById(R.id.layoutAdvanced3);
     }
 
     private void setupToggleButton() {
         btnToggleMode.setOnClickListener(v -> toggleCalculatorMode());
     }
+
 
     private void toggleCalculatorMode() {
         isAdvancedMode = !isAdvancedMode;
@@ -69,12 +73,14 @@ public class MainActivity extends AppCompatActivity {
             // Show advanced functions
             layoutAdvanced1.setVisibility(View.VISIBLE);
             layoutAdvanced2.setVisibility(View.VISIBLE);
+            layoutAdvanced3.setVisibility(View.VISIBLE);
             btnToggleMode.setText("BASIC");
             btnToggleMode.setSelected(true);
         } else {
             // Hide advanced functions
             layoutAdvanced1.setVisibility(View.GONE);
             layoutAdvanced2.setVisibility(View.GONE);
+            layoutAdvanced3.setVisibility(View.GONE);
             btnToggleMode.setText("ADV");
             btnToggleMode.setSelected(false);
         }
