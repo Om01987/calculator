@@ -1,646 +1,597 @@
 package com.example.calculator;
 
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import java.math.BigDecimal;
+import androidx.appcompat.app.AppCompatActivity;
+
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
+import net.objecthunter.exp4j.ValidationResult;
+
+import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
-    // UI Elements
     private TextView tvExpression, tvResult;
-    private Button btnAdd, btnSubtract, btnMultiply, btnDivide;
-    private Button selectedOperatorButton = null;
     private Button btnToggleMode;
-    private LinearLayout layoutAdvanced1, layoutAdvanced2;
+    private LinearLayout layoutAdvanced1, layoutAdvanced2, layoutAdvanced3;
 
-    // Calculator state variables
-    private String expression = "";
-    private String lastResult = "0";
-    private String storedFirstValue = "";
-    private String storedOperator = "";
-    private boolean justCalculated = false;
-    private boolean errorState = false;
     private boolean isAdvancedMode = false;
+    private boolean errorState = false;
+    private boolean justCalculated = false;
+    private boolean isDegreeMode = true; // Default to degrees for user-friendliness
 
-    private LinearLayout layoutAdvanced3;
+    // Enhanced error handling
+    private String lastError = "";
+
+    // Memory storage for advanced functionality
+    private double memoryValue = 0.0;
+
+    // Patterns for input validation
+    private static final Pattern CONSECUTIVE_OPERATORS = Pattern.compile("[+\\-×÷\\^]{2,}");
+    private static final Pattern INVALID_DECIMAL = Pattern.compile("\\d*\\.\\d*\\.\\d*");
+    private static final Pattern EMPTY_PARENTHESES = Pattern.compile("\\(\\s*\\)");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // Initialize UI elements
         initializeViews();
-
-        // Set initial display style
-        setRuntimeDisplayStyle();
-
-        // Set up button listeners
-        setupNumberButtons();
-        setupOperatorButtons();
-        setupFunctionButtons();
-        setupAdvancedButtons();
-        setupToggleButton();
+        setupListeners();
     }
 
     private void initializeViews() {
         tvExpression = findViewById(R.id.tvExpression);
         tvResult = findViewById(R.id.tvResult);
-        btnAdd = findViewById(R.id.btnAdd);
-        btnSubtract = findViewById(R.id.btnSubtract);
-        btnMultiply = findViewById(R.id.btnMultiply);
-        btnDivide = findViewById(R.id.btnDivide);
         btnToggleMode = findViewById(R.id.btnToggleMode);
         layoutAdvanced1 = findViewById(R.id.layoutAdvanced1);
         layoutAdvanced2 = findViewById(R.id.layoutAdvanced2);
-        layoutAdvanced3 = findViewById(R.id.layoutAdvanced3);
+
+        // Handle third advanced layout if exists
+        try {
+            layoutAdvanced3 = findViewById(R.id.layoutAdvanced3);
+        } catch (Exception ignored) {
+            layoutAdvanced3 = null;
+        }
     }
 
-    private void setupToggleButton() {
+    private void setupListeners() {
+        // Toggle Mode
         btnToggleMode.setOnClickListener(v -> toggleCalculatorMode());
-    }
 
-
-    private void toggleCalculatorMode() {
-        isAdvancedMode = !isAdvancedMode;
-
-        if (isAdvancedMode) {
-            // Show advanced functions
-            layoutAdvanced1.setVisibility(View.VISIBLE);
-            layoutAdvanced2.setVisibility(View.VISIBLE);
-            layoutAdvanced3.setVisibility(View.VISIBLE);
-            btnToggleMode.setText("BASIC");
-            btnToggleMode.setSelected(true);
-        } else {
-            // Hide advanced functions
-            layoutAdvanced1.setVisibility(View.GONE);
-            layoutAdvanced2.setVisibility(View.GONE);
-            layoutAdvanced3.setVisibility(View.GONE);
-            btnToggleMode.setText("ADV");
-            btnToggleMode.setSelected(false);
-        }
-    }
-
-    private void setupAdvancedButtons() {
-        // Trigonometric functions
-        findViewById(R.id.btnSin).setOnClickListener(v -> handleAdvancedFunction("sin"));
-        findViewById(R.id.btnCos).setOnClickListener(v -> handleAdvancedFunction("cos"));
-        findViewById(R.id.btnTan).setOnClickListener(v -> handleAdvancedFunction("tan"));
-        findViewById(R.id.btnLog).setOnClickListener(v -> handleAdvancedFunction("log"));
-        findViewById(R.id.btnLn).setOnClickListener(v -> handleAdvancedFunction("ln"));
-
-        // Power and root functions
-        findViewById(R.id.btnSqrt).setOnClickListener(v -> handleAdvancedFunction("√"));
-        findViewById(R.id.btnPower).setOnClickListener(v -> handleAdvancedFunction("²"));
-        findViewById(R.id.btnPowerY).setOnClickListener(v -> handleAdvancedFunction("^"));
-
-        // Constants
-        findViewById(R.id.btnPi).setOnClickListener(v -> handleConstant("π"));
-        findViewById(R.id.btnE).setOnClickListener(v -> handleConstant("e"));
-    }
-
-    private void handleAdvancedFunction(String function) {
-        if (isErrorState()) return;
-
-        if (justCalculated) {
-            expression = lastResult;
-            justCalculated = false;
-            setRuntimeDisplayStyle();
-        }
-
-        switch (function) {
-            case "sin":
-            case "cos":
-            case "tan":
-            case "log":
-            case "ln":
-            case "√":
-                // Functions that take the current number as input
-                expression += function + "(";
-                break;
-            case "²":
-                // Square current number
-                if (!expression.isEmpty() && !isLastCharOperator()) {
-                    expression += "²";
-                }
-                break;
-            case "^":
-                // Power operator
-                if (!expression.isEmpty() && !isLastCharOperator()) {
-                    expression += "^";
-                }
-                break;
-        }
-
-        updateDisplay();
-        calculateLiveResult();
-    }
-
-    private void handleConstant(String constant) {
-        if (isErrorState()) {
-            handleAC();
-        }
-
-        if (justCalculated) {
-            expression = "";
-            justCalculated = false;
-            clearOperatorSelection();
-            setRuntimeDisplayStyle();
-        }
-
-        String value = "";
-        switch (constant) {
-            case "π":
-                value = String.valueOf(Math.PI);
-                break;
-            case "e":
-                value = String.valueOf(Math.E);
-                break;
-        }
-
-        expression += value;
-        updateDisplay();
-        calculateLiveResult();
-    }
-
-    private void setupNumberButtons() {
-        // Number button IDs
+        // Number buttons
         int[] numberButtonIds = {
                 R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
                 R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9
         };
 
-        View.OnClickListener numberClickListener = v -> {
-            Button button = (Button) v;
-            String number = button.getText().toString();
-            handleNumberInput(number);
-        };
-
-        // Assign listeners to number buttons
         for (int id : numberButtonIds) {
-            findViewById(id).setOnClickListener(numberClickListener);
+            findViewById(id).setOnClickListener(view -> onNumberClick(((Button) view).getText().toString()));
         }
 
-        // Decimal button
-        findViewById(R.id.btnDecimal).setOnClickListener(v -> handleDecimalInput());
+        // Basic operator buttons
+        int[] basicOperatorIds = {R.id.btnAdd, R.id.btnSubtract, R.id.btnMultiply, R.id.btnDivide};
+        for (int id : basicOperatorIds) {
+            findViewById(id).setOnClickListener(view -> onOperatorClick(((Button) view).getText().toString()));
+        }
+
+        // Advanced function buttons
+        findViewById(R.id.btnSin).setOnClickListener(v -> onTrigFunction("sin"));
+        findViewById(R.id.btnCos).setOnClickListener(v -> onTrigFunction("cos"));
+        findViewById(R.id.btnTan).setOnClickListener(v -> onTrigFunction("tan"));
+        findViewById(R.id.btnLog).setOnClickListener(v -> onFunctionClick("log10"));
+        findViewById(R.id.btnLn).setOnClickListener(v -> onFunctionClick("log"));
+        findViewById(R.id.btnSqrt).setOnClickListener(v -> onFunctionClick("sqrt"));
+
+        // Special buttons
+        findViewById(R.id.btnDecimal).setOnClickListener(v -> onDecimalClick());
+        findViewById(R.id.btnLeftParen).setOnClickListener(v -> onAppendText("("));
+        findViewById(R.id.btnRightParen).setOnClickListener(v -> onAppendText(")"));
+        findViewById(R.id.btnPower).setOnClickListener(v -> onOperatorClick("^"));
+        findViewById(R.id.btnPi).setOnClickListener(v -> onConstantClick("π"));
+
+        // Advanced function buttons with error handling
+        setupAdvancedButtons();
+
+        // Control buttons
+        findViewById(R.id.btnAC).setOnClickListener(v -> clearAll());
+        findViewById(R.id.btnBackspace).setOnClickListener(v -> deleteLast());
+        findViewById(R.id.btnPercent).setOnClickListener(v -> applyPercentage());
+        findViewById(R.id.btnEquals).setOnClickListener(v -> showFinalResult());
+
+        // Live calculation listener with debouncing
+        tvExpression.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Debounce live calculation to improve performance
+                tvExpression.removeCallbacks(liveCalculationRunnable);
+                tvExpression.postDelayed(liveCalculationRunnable, 150);
+            }
+        });
     }
 
-    private void setupOperatorButtons() {
-        findViewById(R.id.btnAdd).setOnClickListener(v -> {
-            handleOperatorInput("+");
-            selectOperatorButton(btnAdd);
-        });
+    private void setupAdvancedButtons() {
+        // Factorial button
+        try {
+            findViewById(R.id.btnFactorial).setOnClickListener(v -> onFactorialClick());
+        } catch (Exception ignored) {}
 
-        findViewById(R.id.btnSubtract).setOnClickListener(v -> {
-            handleOperatorInput("-");
-            selectOperatorButton(btnSubtract);
-        });
+        // Euler's number constant
+        try {
+            findViewById(R.id.btnE).setOnClickListener(v -> onConstantClick("e"));
+        } catch (Exception ignored) {}
 
-        findViewById(R.id.btnMultiply).setOnClickListener(v -> {
-            handleOperatorInput("×");
-            selectOperatorButton(btnMultiply);
-        });
+        // Exponential function
+        try {
+            findViewById(R.id.btnExp).setOnClickListener(v -> onFunctionClick("exp"));
+        } catch (Exception ignored) {}
 
-        findViewById(R.id.btnDivide).setOnClickListener(v -> {
-            handleOperatorInput("÷");
-            selectOperatorButton(btnDivide);
-        });
+        // Modulo operation
+        try {
+            findViewById(R.id.btnMod).setOnClickListener(v -> onOperatorClick("mod"));
+        } catch (Exception ignored) {}
 
-        findViewById(R.id.btnEquals).setOnClickListener(v -> handleEqualsInput());
+        // Absolute value function
+        try {
+            findViewById(R.id.btnAbs).setOnClickListener(v -> onFunctionClick("abs"));
+        } catch (Exception ignored) {}
     }
 
-    private void setupFunctionButtons() {
-        findViewById(R.id.btnAC).setOnClickListener(v -> handleAC());
-        findViewById(R.id.btnCE).setOnClickListener(v -> handleCE());
-        findViewById(R.id.btnBackspace).setOnClickListener(v -> handleBackspace());
-        findViewById(R.id.btnPlusMinus).setOnClickListener(v -> handlePlusMinus());
-        findViewById(R.id.btnPercent).setOnClickListener(v -> handlePercentage());
+    private final Runnable liveCalculationRunnable = this::calculateLiveResult;
 
-        // Long press backspace for CE functionality
-        findViewById(R.id.btnBackspace).setOnLongClickListener(v -> {
-            handleCE();
-            return true;
-        });
+    private void onNumberClick(String number) {
+        if (errorState) {
+            clearAll();
+        }
+
+        if (justCalculated) {
+            tvExpression.setText(""); // Start fresh for new numbers
+            justCalculated = false;
+        }
+
+        // Prevent leading zeros (except for decimal numbers)
+        String currentExpr = tvExpression.getText().toString();
+        if (number.equals("0") && !currentExpr.isEmpty()) {
+            String[] parts = currentExpr.split("[+\\-×÷\\^\\(\\)\\s]");
+            if (parts.length > 0) {
+                String lastPart = parts[parts.length - 1];
+                if (lastPart.equals("0") && !lastPart.contains(".")) {
+                    return; // Don't add leading zero
+                }
+            }
+        }
+
+        tvExpression.append(number);
     }
 
-    // Display styling methods
-    private void setRuntimeDisplayStyle() {
-        // During typing: Expression bold, Result dim
-        tvExpression.setTextSize(24);
-        tvExpression.setTextColor(getResources().getColor(android.R.color.white));
-        tvResult.setTextSize(32);
-        tvResult.setTextColor(getResources().getColor(android.R.color.darker_gray));
-    }
+    private void onOperatorClick(String operator) {
+        if (errorState) {
+            clearAll();
+        }
 
-    private void setFinalResultStyle() {
-        // After equals: Expression dim, Result bold
-        tvExpression.setTextSize(20);
-        tvExpression.setTextColor(getResources().getColor(android.R.color.darker_gray));
-        tvResult.setTextSize(42);
-        tvResult.setTextColor(getResources().getColor(android.R.color.white));
-    }
+        String currentExpression = tvExpression.getText().toString();
 
-    // Operator selection visual feedback methods
-    private void clearOperatorSelection() {
-        if (selectedOperatorButton != null) {
-            selectedOperatorButton.setSelected(false);
-            selectedOperatorButton = null;
+        // If just calculated, continue with the result
+        if (justCalculated) {
+            justCalculated = false;
+        }
+
+        // Handle empty expression
+        if (currentExpression.isEmpty()) {
+            if (operator.equals("-")) {
+                tvExpression.append(operator); // Allow negative numbers
+            }
+            return;
+        }
+
+        // Prevent consecutive operators (except for negative signs)
+        char lastChar = currentExpression.charAt(currentExpression.length() - 1);
+        if ("+-×÷^".contains(String.valueOf(lastChar))) {
+            if (operator.equals("-") && !"+-".contains(String.valueOf(lastChar))) {
+                tvExpression.append(operator); // Allow negative after operators
+            } else {
+                // Replace the last operator
+                tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 1) + operator);
+            }
+        } else {
+            tvExpression.append(operator);
         }
     }
 
-    private void selectOperatorButton(Button button) {
-        clearOperatorSelection();
-        selectedOperatorButton = button;
-        selectedOperatorButton.setSelected(true);
+    private void onTrigFunction(String function) {
+        if (errorState) {
+            clearAll();
+        }
+
+        if (justCalculated) {
+            tvExpression.setText(""); // Start fresh
+            justCalculated = false;
+        }
+
+        // Add degree conversion if in degree mode
+        if (isDegreeMode) {
+            tvExpression.append(function + "(");
+        } else {
+            tvExpression.append(function + "(");
+        }
     }
 
-    // Error state management
-    private boolean isErrorState() {
-        return errorState;
+    private void onFunctionClick(String function) {
+        if (errorState) {
+            clearAll();
+        }
+
+        if (justCalculated) {
+            tvExpression.setText(""); // Start fresh
+            justCalculated = false;
+        }
+
+        tvExpression.append(function + "(");
     }
 
-    private void setError(String message) {
-        errorState = true;
-        tvResult.setText(message);
+    private void onDecimalClick() {
+        if (errorState) {
+            clearAll();
+        }
+
+        String currentExpression = tvExpression.getText().toString();
+
+        // Check if the current number already has a decimal point
+        String[] parts = currentExpression.split("[+\\-×÷\\^\\(\\)\\s]");
+        if (parts.length > 0) {
+            String lastPart = parts[parts.length - 1].trim();
+            if (!lastPart.contains(".")) {
+                if (lastPart.isEmpty() || isOperator(lastPart.charAt(lastPart.length() - 1))) {
+                    tvExpression.append("0.");
+                } else {
+                    tvExpression.append(".");
+                }
+            }
+        } else {
+            tvExpression.append("0.");
+        }
+    }
+
+    private boolean isOperator(char c) {
+        return "+-×÷^()".contains(String.valueOf(c));
+    }
+
+    private void onConstantClick(String constant) {
+        if (errorState) {
+            clearAll();
+        }
+
+        if (justCalculated) {
+            tvExpression.setText("");
+            justCalculated = false;
+        }
+
+        // Add multiplication if needed (e.g., "5π" should become "5*π")
+        String currentExpr = tvExpression.getText().toString();
+        if (!currentExpr.isEmpty()) {
+            char lastChar = currentExpr.charAt(currentExpr.length() - 1);
+            if (Character.isDigit(lastChar) || lastChar == ')') {
+                tvExpression.append("×" + constant);
+                return;
+            }
+        }
+
+        tvExpression.append(constant);
+    }
+
+    private void onFactorialClick() {
+        if (errorState) {
+            clearAll();
+        }
+
+        String currentExpression = tvExpression.getText().toString();
+        if (!currentExpression.isEmpty()) {
+            char lastChar = currentExpression.charAt(currentExpression.length() - 1);
+            if (Character.isDigit(lastChar) || lastChar == ')') {
+                tvExpression.append("!");
+            }
+        }
+    }
+
+    private void onAppendText(String text) {
+        if (errorState) {
+            clearAll();
+        }
+
+        if (justCalculated && text.equals("(")) {
+            tvExpression.setText("");
+            justCalculated = false;
+        }
+
+        // Smart parentheses handling
+        if (text.equals(")")) {
+            String currentExpr = tvExpression.getText().toString();
+            long openParens = currentExpr.chars().filter(ch -> ch == '(').count();
+            long closeParens = currentExpr.chars().filter(ch -> ch == ')').count();
+
+            if (closeParens >= openParens) {
+                return; // Don't add extra closing parentheses
+            }
+        }
+
+        tvExpression.append(text);
+    }
+
+    private void toggleCalculatorMode() {
+        isAdvancedMode = !isAdvancedMode;
+        layoutAdvanced1.setVisibility(isAdvancedMode ? View.VISIBLE : View.GONE);
+        layoutAdvanced2.setVisibility(isAdvancedMode ? View.VISIBLE : View.GONE);
+
+        // Handle third layout if exists
+        if (layoutAdvanced3 != null) {
+            layoutAdvanced3.setVisibility(isAdvancedMode ? View.VISIBLE : View.GONE);
+        }
+
+        btnToggleMode.setText(isAdvancedMode ? "BASIC" : "ADV");
+    }
+
+    private void clearAll() {
         tvExpression.setText("");
-        setRuntimeDisplayStyle();
+        tvResult.setText("0");
+        errorState = false;
+        justCalculated = false;
+        lastError = "";
     }
 
-    private void clearErrorState() {
+    private void deleteLast() {
+        String currentExpression = tvExpression.getText().toString();
+        if (!currentExpression.isEmpty()) {
+            // Handle multi-character functions and constants
+            if (currentExpression.endsWith("sin(") || currentExpression.endsWith("cos(") ||
+                    currentExpression.endsWith("tan(") || currentExpression.endsWith("log(") ||
+                    currentExpression.endsWith("exp(") || currentExpression.endsWith("abs(")) {
+                tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 4));
+            } else if (currentExpression.endsWith("sqrt(") || currentExpression.endsWith("log10(")) {
+                tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 5));
+            } else if (currentExpression.endsWith("mod")) {
+                tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 3));
+            } else {
+                tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 1));
+            }
+        }
         errorState = false;
     }
 
-    // Core input handling methods
-    private void handleNumberInput(String number) {
-        if (isErrorState()) {
-            handleAC();
-        }
-
-        if (justCalculated) {
-            expression = "";
-            justCalculated = false;
-            clearOperatorSelection();
-            setRuntimeDisplayStyle();
-        }
-
-        expression += number;
-        updateDisplay();
-        calculateLiveResult();
-    }
-
-    private void handleDecimalInput() {
-        if (isErrorState()) {
-            handleAC();
-        }
-
-        if (justCalculated) {
-            expression = "0";
-            justCalculated = false;
-            clearOperatorSelection();
-            setRuntimeDisplayStyle();
-        }
-
-        // Check if current number already has decimal
-        String[] parts = expression.split("[+\\-×÷^]");
-        if (parts.length > 0) {
-            String currentNumber = parts[parts.length - 1];
-            if (!currentNumber.contains(".")) {
-                if (expression.isEmpty() || isLastCharOperator()) {
-                    expression += "0.";
-                } else {
-                    expression += ".";
-                }
-                updateDisplay();
-            }
-        }
-    }
-
-    private void handleOperatorInput(String operator) {
-        if (isErrorState()) return;
-
-        if (justCalculated) {
-            expression = lastResult;
-            justCalculated = false;
-            setRuntimeDisplayStyle();
-        }
-
-        if (expression.isEmpty()) {
-            if (lastResult.equals("0")) return;
-            expression = lastResult;
-        }
-
-        // Store current state for CE functionality
-        if (!expression.isEmpty() && !isLastCharOperator()) {
-            String[] parts = expression.split("[+\\-×÷^]");
-            if (parts.length >= 1) {
-                storedFirstValue = parts[0];
-                if (parts.length == 1) {
-                    storedOperator = operator;
-                }
-            }
-        }
-
-        // Replace last operator if the last character is an operator
-        if (isLastCharOperator()) {
-            expression = expression.substring(0, expression.length() - 1);
-        }
-
-        expression += operator;
-        updateDisplay();
-        calculateLiveResult();
-    }
-
-    private void handleEqualsInput() {
-        if (isErrorState() || expression.isEmpty()) return;
-
-        if (isLastCharOperator()) {
-            expression = expression.substring(0, expression.length() - 1);
-        }
-
-        String result = evaluateExpression(expression);
-        if (!isErrorState()) {
-            lastResult = result;
-            justCalculated = true;
-            clearOperatorSelection();
-
-            setFinalResultStyle();
-
-            tvResult.setText(result);
-            updateDisplay();
-        }
-    }
-
-    // Clear and backspace methods
-    private void handleBackspace() {
-        if (isErrorState()) {
-            handleCE();
-            return;
-        }
-
-        if (justCalculated) {
-            handleAC();
-            return;
-        }
-
-        if (!expression.isEmpty()) {
-            expression = expression.substring(0, expression.length() - 1);
-            updateDisplay();
-            calculateLiveResult();
-        }
-
-        if (expression.isEmpty()) {
-            tvResult.setText("0");
-        }
-    }
-
-    private void handleCE() {
-        if (!storedFirstValue.isEmpty() && !storedOperator.isEmpty()) {
-            expression = storedFirstValue + storedOperator;
-            updateDisplay();
-        } else {
-            expression = "";
-            tvResult.setText("0");
-            updateDisplay();
-        }
-
-        justCalculated = false;
-        clearErrorState();
-        setRuntimeDisplayStyle();
-    }
-
-    private void handleAC() {
-        expression = "";
-        lastResult = "0";
-        storedFirstValue = "";
-        storedOperator = "";
-        justCalculated = false;
-        clearOperatorSelection();
-        clearErrorState();
-        setRuntimeDisplayStyle();
-        updateDisplay();
-        tvResult.setText("0");
-    }
-
-    private void handlePlusMinus() {
-        if (isErrorState()) return;
-
-        if (justCalculated) {
-            if (!lastResult.equals("0")) {
-                if (lastResult.startsWith("-")) {
-                    lastResult = lastResult.substring(1);
-                } else {
-                    lastResult = "-" + lastResult;
-                }
-                tvResult.setText(lastResult);
-            }
-        } else {
-            String[] parts = expression.split("([+\\-×÷^])");
-            if (parts.length > 0) {
-                String currentNumber = parts[parts.length - 1];
-                if (!currentNumber.isEmpty() && !currentNumber.equals("0")) {
-                    String newNumber;
-                    if (currentNumber.startsWith("-")) {
-                        newNumber = currentNumber.substring(1);
-                    } else {
-                        newNumber = "-" + currentNumber;
-                    }
-
-                    int lastNumberStart = expression.lastIndexOf(currentNumber);
-                    expression = expression.substring(0, lastNumberStart) + newNumber;
-                    updateDisplay();
-                    calculateLiveResult();
-                }
-            }
-        }
-    }
-
-    private void handlePercentage() {
-        if (isErrorState()) return;
-
-        if (justCalculated) {
+    private void applyPercentage() {
+        String expression = tvExpression.getText().toString();
+        if (!expression.isEmpty() && !errorState) {
             try {
-                double value = Double.parseDouble(lastResult);
-                double result = value / 100.0;
-                lastResult = formatResult(result);
-                tvResult.setText(lastResult);
-            } catch (NumberFormatException e) {
-                setError("Error");
-            }
-        } else {
-            String[] parts = expression.split("([+\\-×÷^])");
-            if (parts.length > 0) {
-                String currentNumber = parts[parts.length - 1];
-                if (!currentNumber.isEmpty()) {
-                    try {
-                        double value = Double.parseDouble(currentNumber);
-                        double result = value / 100.0;
-                        String newNumber = formatResult(result);
+                // Get the last number in the expression
+                String[] parts = expression.split("[+\\-×÷^()]");
+                if (parts.length > 0) {
+                    String lastNumber = parts[parts.length - 1].trim();
+                    if (!lastNumber.isEmpty() && isNumeric(lastNumber)) {
+                        double value = Double.parseDouble(lastNumber);
+                        double percentValue = value / 100;
 
-                        int lastNumberStart = expression.lastIndexOf(currentNumber);
-                        expression = expression.substring(0, lastNumberStart) + newNumber;
-                        updateDisplay();
-                        calculateLiveResult();
-                    } catch (NumberFormatException e) {
-                        setError("Error");
+                        // Replace the last number with its percentage
+                        String newExpression = expression.substring(0, expression.lastIndexOf(lastNumber)) + percentValue;
+                        tvExpression.setText(newExpression);
                     }
                 }
+            } catch (Exception e) {
+                tvResult.setText("Error: Invalid for %");
+                errorState = true;
             }
         }
     }
 
-    // Utility methods
-    private void updateDisplay() {
-        tvExpression.setText(expression.isEmpty() ? "" : expression);
+    private boolean isNumeric(String str) {
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private void showFinalResult() {
+        try {
+            String expression = tvExpression.getText().toString();
+            if (expression.isEmpty()) return;
+
+            double result = evaluateExpression(expression);
+            String formattedResult = formatResult(result);
+
+            tvExpression.setText(formattedResult);
+            tvResult.setText("");
+            justCalculated = true;
+            errorState = false;
+            lastError = "";
+        } catch (ArithmeticException e) {
+            tvResult.setText("Error: " + e.getMessage());
+            errorState = true;
+            lastError = e.getMessage();
+        } catch (Exception e) {
+            tvResult.setText("Error: Invalid expression");
+            errorState = true;
+            lastError = "Invalid expression";
+        }
     }
 
     private void calculateLiveResult() {
-        if (expression.isEmpty() || isLastCharOperator()) return;
+        if (justCalculated || errorState) return;
 
-        String result = evaluateExpression(expression);
-        if (!isErrorState() && !justCalculated) {
-            tvResult.setText(result);
+        String expressionStr = tvExpression.getText().toString();
+        if (expressionStr.isEmpty()) {
+            tvResult.setText("");
+            return;
         }
-    }
 
-    private String evaluateExpression(String expr) {
         try {
-            // Replace display operators with calculation operators
-            String calcExpr = expr.replace("×", "*")
-                    .replace("÷", "/")
-                    .replace("²", "^2")
-                    .replace("π", String.valueOf(Math.PI))
-                    .replace("e", String.valueOf(Math.E));
-
-            // Handle scientific functions (simplified for basic functionality)
-            calcExpr = handleScientificFunctions(calcExpr);
-
-            double result = evaluateAdvancedExpression(calcExpr);
-            return formatResult(result);
+            // Only calculate if expression seems complete
+            if (isExpressionCalculable(expressionStr)) {
+                double result = evaluateExpression(expressionStr);
+                tvResult.setText("= " + formatResult(result));
+            } else {
+                tvResult.setText("");
+            }
         } catch (Exception e) {
-            setError("Error");
-            return "Error";
+            tvResult.setText("");
         }
     }
 
-    private String handleScientificFunctions(String expr) {
-        // Simplified scientific function handling
-        // In a full implementation, you'd need more sophisticated parsing
-        return expr;
-    }
-
-    private double evaluateAdvancedExpression(String expression) throws Exception {
-        return parseExpression(expression.replace(" ", ""), new int[]{0});
-    }
-
-    private double parseExpression(String expr, int[] pos) throws Exception {
-        double result = parseTerm(expr, pos);
-
-        while (pos[0] < expr.length()) {  // ✅ FIXED: pos[0] instead of pos
-            char op = expr.charAt(pos[0]);  // ✅ FIXED: pos[0] instead of pos
-            if (op != '+' && op != '-') break;
-
-            pos[0]++;  // ✅ FIXED: pos[0]++ instead of pos++
-            double term = parseTerm(expr, pos);
-            if (op == '+') {
-                result += term;
-            } else {
-                result -= term;
-            }
-        }
-
-        return result;
-    }
-
-    private double parseTerm(String expr, int[] pos) throws Exception {
-        double result = parsePower(expr, pos);
-
-        while (pos[0] < expr.length()) {  // ✅ FIXED: pos[0] instead of pos
-            char op = expr.charAt(pos[0]);  // ✅ FIXED: pos[0] instead of pos
-            if (op != '*' && op != '/') break;
-
-            pos[0]++;  // ✅ FIXED: pos[0]++ instead of pos++
-            double factor = parsePower(expr, pos);
-            if (op == '*') {
-                result *= factor;
-            } else {
-                if (factor == 0) {
-                    throw new ArithmeticException("Division by zero");
-                }
-                result /= factor;
-            }
-        }
-
-        return result;
-    }
-
-    private double parsePower(String expr, int[] pos) throws Exception {
-        double result = parseFactor(expr, pos);
-
-        while (pos[0] < expr.length() && expr.charAt(pos[0]) == '^') {  // ✅ FIXED: pos[0] instead of pos
-            pos[0]++;  // ✅ FIXED: pos[0]++ instead of pos++
-            double exponent = parseFactor(expr, pos);
-            result = Math.pow(result, exponent);
-        }
-
-        return result;
-    }
-
-    private double parseFactor(String expr, int[] pos) throws Exception {
-        double result;
-        boolean negative = false;
-
-        if (pos[0] < expr.length() && expr.charAt(pos[0]) == '-') {  // ✅ FIXED: pos[0] instead of pos
-            negative = true;
-            pos[0]++;  // ✅ FIXED: pos[0]++ instead of pos++
-        }
-
-        if (pos[0] < expr.length() && expr.charAt(pos[0]) == '(') {  // ✅ FIXED: pos[0] instead of pos
-            pos[0]++;  // ✅ FIXED: pos[0]++ instead of pos++
-            result = parseExpression(expr, pos);
-            pos[0]++;  // Skip ')' - ✅ FIXED: pos[0]++ instead of pos++
-        } else {
-            StringBuilder sb = new StringBuilder();
-            while (pos[0] < expr.length() && (Character.isDigit(expr.charAt(pos[0])) || expr.charAt(pos[0]) == '.')) {  // ✅ FIXED: pos[0] instead of pos
-                sb.append(expr.charAt(pos[0]));  // ✅ FIXED: pos[0] instead of pos
-                pos[0]++;  // ✅ FIXED: pos[0]++ instead of pos++
-            }
-            if (sb.length() == 0) {
-                throw new Exception("Invalid expression");
-            }
-            result = Double.parseDouble(sb.toString());
-        }
-
-        return negative ? -result : result;
-    }
-
-// … (rest of your MainActivity.java below remains unchanged)
-
-
-    private boolean isLastCharOperator() {
+    private boolean isExpressionCalculable(String expression) {
         if (expression.isEmpty()) return false;
+
+        // Check for unmatched parentheses
+        long openParens = expression.chars().filter(ch -> ch == '(').count();
+        long closeParens = expression.chars().filter(ch -> ch == ')').count();
+        if (openParens != closeParens) return false;
+
+        // Don't calculate if expression ends with an operator or open parenthesis
         char lastChar = expression.charAt(expression.length() - 1);
-        return lastChar == '+' || lastChar == '-' || lastChar == '×' || lastChar == '÷' || lastChar == '^';
+        return !"+-×÷^(".contains(String.valueOf(lastChar));
+    }
+
+    private double evaluateExpression(String expressionStr) throws ArithmeticException {
+        // Input validation
+        if (CONSECUTIVE_OPERATORS.matcher(expressionStr).find()) {
+            throw new ArithmeticException("Invalid operator sequence");
+        }
+
+        if (INVALID_DECIMAL.matcher(expressionStr).find()) {
+            throw new ArithmeticException("Invalid decimal format");
+        }
+
+        if (EMPTY_PARENTHESES.matcher(expressionStr).find()) {
+            throw new ArithmeticException("Empty parentheses");
+        }
+
+        // Prepare the string for evaluation
+        String parsableStr = prepareExpression(expressionStr);
+
+        try {
+            Expression expression = new ExpressionBuilder(parsableStr).build();
+
+            // Validate expression
+            ValidationResult validation = expression.validate();
+            if (!validation.isValid()) {
+                throw new ArithmeticException("Invalid expression");
+            }
+
+            double result = expression.evaluate();
+
+            // Check for mathematical errors
+            if (Double.isNaN(result)) {
+                throw new ArithmeticException("Result is undefined");
+            }
+            if (Double.isInfinite(result)) {
+                throw new ArithmeticException("Division by zero");
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            if (e instanceof ArithmeticException) {
+                throw e;
+            }
+            throw new ArithmeticException("Calculation error");
+        }
+    }
+
+    private String prepareExpression(String expressionStr) {
+        String result = expressionStr
+                .replace('×', '*')
+                .replace('÷', '/')
+                .replace('−', '-') // Handle proper minus sign
+                .replace("π", String.valueOf(Math.PI))
+                .replace("e", String.valueOf(Math.E))
+                .replace("mod", "%"); // Handle modulo operation
+
+        // Handle factorial
+        result = handleFactorial(result);
+
+        // Handle trigonometric functions with degree conversion
+        result = handleTrigFunctions(result);
+
+        return result;
+    }
+
+    private String handleTrigFunctions(String expression) {
+        if (!isDegreeMode) return expression;
+
+        // Convert degrees to radians for trig functions
+        expression = expression.replaceAll("sin\\(([^)]+)\\)", "sin(($1)*" + Math.PI + "/180)");
+        expression = expression.replaceAll("cos\\(([^)]+)\\)", "cos(($1)*" + Math.PI + "/180)");
+        expression = expression.replaceAll("tan\\(([^)]+)\\)", "tan(($1)*" + Math.PI + "/180)");
+
+        return expression;
+    }
+
+    private String handleFactorial(String expression) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < expression.length(); i++) {
+            if (expression.charAt(i) == '!') {
+                // Find the number before the factorial
+                int j = i - 1;
+                while (j >= 0 && (Character.isDigit(expression.charAt(j)) || expression.charAt(j) == '.')) {
+                    j--;
+                }
+
+                String numberStr = expression.substring(j + 1, i);
+                if (!numberStr.isEmpty()) {
+                    try {
+                        int number = (int) Double.parseDouble(numberStr);
+                        long factorial = calculateFactorial(number);
+
+                        // Replace the number and ! with the factorial result
+                        result.delete(result.length() - numberStr.length(), result.length());
+                        result.append(factorial);
+                    } catch (Exception e) {
+                        throw new ArithmeticException("Invalid factorial");
+                    }
+                } else {
+                    result.append(expression.charAt(i));
+                }
+            } else {
+                result.append(expression.charAt(i));
+            }
+        }
+        return result.toString();
+    }
+
+    private long calculateFactorial(int n) {
+        if (n < 0) throw new ArithmeticException("Factorial of negative number");
+        if (n > 20) throw new ArithmeticException("Factorial too large (max 20!)");
+
+        long result = 1;
+        for (int i = 2; i <= n; i++) {
+            result *= i;
+        }
+        return result;
     }
 
     private String formatResult(double result) {
-        if (Double.isNaN(result) || Double.isInfinite(result)) {
-            setError("Error");
-            return "Error";
+        // Handle very large and very small numbers with scientific notation
+        if (Math.abs(result) >= 1e10 || (Math.abs(result) < 1e-4 && result != 0)) {
+            return String.format(Locale.US, "%.6E", result);
         }
 
-        BigDecimal bd = new BigDecimal(result);
-        bd = bd.stripTrailingZeros();
-        String str = bd.toPlainString();
+        DecimalFormat df = new DecimalFormat("#.##########");
+        df.setMaximumFractionDigits(10);
 
-        if (str.length() > 12) {
-            str = String.format(Locale.US, "%.8g", result);
+        // For whole numbers, don't show decimal
+        if (result == Math.floor(result) && !Double.isInfinite(result)) {
+            return String.format(Locale.US, "%.0f", result);
+        } else {
+            return df.format(result);
         }
-
-        return str;
     }
 }
