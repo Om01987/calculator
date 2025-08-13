@@ -1,59 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base Style for all Calculator Buttons -->
-    <style name="CalculatorButton">
+    <!-- Base Button Style -->
+    <style name="BaseButton">
         <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">70dp</item>
+        <item name="android:layout_height">match_parent</item>
         <item name="android:layout_weight">1</item>
         <item name="android:layout_margin">4dp</item>
-        <item name="android:textSize">22sp</item>
-        <item name="android:textColor">#FFFFFF</item>
         <item name="android:gravity">center</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:elevation">4dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+    </style>
+
+    <!-- Number Buttons -->
+    <style name="NumberButton" parent="BaseButton">
         <item name="android:background">@drawable/bg_number</item>
-        <item name="android:elevation">6dp</item>
-        <item name="android:stateListAnimator">@null</item>
-        <item name="android:foreground">?android:attr/selectableItemBackground</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-    </style>
-
-    <!-- Style for Advanced Function Buttons (Scientific Blue) -->
-    <style name="CalculatorButton.Advanced" parent="CalculatorButton">
-        <item name="android:background">@drawable/bg_advanced</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:layout_height">60dp</item>
-        <item name="android:textColor">#FFFFFF</item>
-    </style>
-
-    <!-- Style for Function Buttons (Elegant Purple) -->
-    <style name="CalculatorButton.Function" parent="CalculatorButton">
-        <item name="android:background">@drawable/bg_function</item>
-        <item name="android:textColor">#FFFFFF</item>
-        <item name="android:textStyle">bold</item>
-    </style>
-
-    <!-- Style for Operator Buttons (Premium Orange) -->
-    <style name="CalculatorButton.Operator" parent="CalculatorButton">
-        <item name="android:background">@drawable/bg_operator</item>
-        <item name="android:textColor">#FFFFFF</item>
-        <item name="android:textSize">24sp</item>
-    </style>
-
-    <!-- Style for Number Buttons (Premium Dark) -->
-    <style name="CalculatorButton.Number" parent="CalculatorButton">
+        <item name="android:textSize">20sp</item>
         <item name="android:textColor">#E8E8E8</item>
     </style>
 
-    <!-- Wide Number Button (for 0) -->
-    <style name="CalculatorButton.Number.Wide" parent="CalculatorButton.Number">
+    <!-- Wide Number Button -->
+    <style name="NumberButton.Wide" parent="NumberButton">
         <item name="android:layout_weight">2</item>
     </style>
 
-    <!-- Style for the Equals Button (Success Green) -->
-    <style name="CalculatorButton.Equals" parent="CalculatorButton">
-        <item name="android:background">@drawable/bg_equals</item>
+    <!-- Operator Buttons -->
+    <style name="OperatorButton" parent="BaseButton">
+        <item name="android:background">@drawable/bg_operator</item>
+        <item name="android:textSize">24sp</item>
         <item name="android:textColor">#FFFFFF</item>
-        <item name="android:textSize">28sp</item>
-        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Function Buttons -->
+    <style name="FunctionButton" parent="BaseButton">
+        <item name="android:background">@drawable/bg_function</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">#000000</item>
+    </style>
+
+    <!-- Advanced Buttons -->
+    <style name="AdvancedButton" parent="BaseButton">
+        <item name="android:background">@drawable/bg_advanced</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <!-- Equals Button -->
+    <style name="EqualsButton" parent="BaseButton">
+        <item name="android:background">@drawable/bg_equals</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 </resources>
