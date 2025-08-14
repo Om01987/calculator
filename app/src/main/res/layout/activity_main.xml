@@ -3,17 +3,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#000000">
+    android:background="#000000"
+    android:clipToPadding="false">
 
     <!-- TOP: Display Area -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.35"
+        android:layout_weight="0.30"
         android:orientation="vertical"
         android:gravity="bottom"
         android:padding="16dp"
-        android:background="#111111">
+        android:background="#111111"
+        android:clipToPadding="false">
 
         <!-- Mode Indicator and Toggle -->
         <LinearLayout
@@ -68,24 +70,25 @@
             android:maxLines="1"
             android:ellipsize="start"
             android:fontFamily="sans-serif-light"
-            android:minHeight="48dp" />
+            android:minHeight="48dp"
+            android:padding="4dp" />
     </LinearLayout>
 
     <!-- BOTTOM: Button Panel -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.65"
+        android:layout_weight="0.70"
         android:orientation="vertical"
         android:padding="8dp"
         android:background="#111111"
         android:gravity="bottom">
 
-        <!-- ADVANCED ROW 1 (Hidden by default) -->
+        <!-- ADVANCED ROW 1: Trigonometric Functions (4 buttons) -->
         <LinearLayout
             android:id="@+id/layoutAdvanced1"
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
             android:orientation="horizontal"
             android:layout_marginBottom="6dp"
             android:visibility="gone">
@@ -93,46 +96,43 @@
             <Button android:id="@+id/btnSin" style="@style/AdvancedButton" android:text="sin" />
             <Button android:id="@+id/btnCos" style="@style/AdvancedButton" android:text="cos" />
             <Button android:id="@+id/btnTan" style="@style/AdvancedButton" android:text="tan" />
-            <Button android:id="@+id/btnLog" style="@style/AdvancedButton" android:text="log" />
-            <Button android:id="@+id/btnLn" style="@style/AdvancedButton" android:text="ln" />
+            <Button android:id="@+id/btnDegRad" style="@style/AdvancedButton" android:text="DEG" />
         </LinearLayout>
 
-        <!-- ADVANCED ROW 2 (Hidden by default) -->
+        <!-- ADVANCED ROW 2: Math Functions (4 buttons) -->
         <LinearLayout
             android:id="@+id/layoutAdvanced2"
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
+            android:orientation="horizontal"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone">
+
+            <Button android:id="@+id/btnLog" style="@style/AdvancedButton" android:text="log" />
+            <Button android:id="@+id/btnLn" style="@style/AdvancedButton" android:text="ln" />
+            <Button android:id="@+id/btnSqrt" style="@style/AdvancedButton" android:text="√" />
+            <Button android:id="@+id/btnPower" style="@style/AdvancedButton" android:text="x^y" />
+        </LinearLayout>
+
+        <!-- ADVANCED ROW 3: Special Functions & Constants (4 buttons) -->
+        <LinearLayout
+            android:id="@+id/layoutAdvanced3"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
             android:orientation="horizontal"
             android:layout_marginBottom="6dp"
             android:visibility="gone">
 
             <Button android:id="@+id/btnLeftParen" style="@style/AdvancedButton" android:text="(" />
             <Button android:id="@+id/btnRightParen" style="@style/AdvancedButton" android:text=")" />
-            <Button android:id="@+id/btnSqrt" style="@style/AdvancedButton" android:text="√" />
-            <Button android:id="@+id/btnPower" style="@style/AdvancedButton" android:text="x^y" />
             <Button android:id="@+id/btnPi" style="@style/AdvancedButton" android:text="π" />
-        </LinearLayout>
-
-        <!-- ADVANCED ROW 3 (Hidden by default) -->
-        <LinearLayout
-            android:id="@+id/layoutAdvanced3"
-            android:layout_width="match_parent"
-            android:layout_height="68dp"
-            android:orientation="horizontal"
-            android:layout_marginBottom="6dp"
-            android:visibility="gone">
-
-            <Button android:id="@+id/btnFactorial" style="@style/AdvancedButton" android:text="x!" />
             <Button android:id="@+id/btnE" style="@style/AdvancedButton" android:text="e" />
-            <Button android:id="@+id/btnExp" style="@style/AdvancedButton" android:text="exp" />
-            <Button android:id="@+id/btnMod" style="@style/AdvancedButton" android:text="mod" />
-            <Button android:id="@+id/btnAbs" style="@style/AdvancedButton" android:text="|x|" />
         </LinearLayout>
 
         <!-- BASIC ROW 1: Functions - ALWAYS VISIBLE -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
             android:orientation="horizontal"
             android:layout_marginBottom="6dp">
 
@@ -145,7 +145,7 @@
         <!-- BASIC ROW 2: 7,8,9,× - ALWAYS VISIBLE -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
             android:orientation="horizontal"
             android:layout_marginBottom="6dp">
 
@@ -158,7 +158,7 @@
         <!-- BASIC ROW 3: 4,5,6,− - ALWAYS VISIBLE -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
             android:orientation="horizontal"
             android:layout_marginBottom="6dp">
 
@@ -171,7 +171,7 @@
         <!-- BASIC ROW 4: 1,2,3,+ - ALWAYS VISIBLE -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
             android:orientation="horizontal"
             android:layout_marginBottom="6dp">
 
@@ -184,7 +184,7 @@
         <!-- BASIC ROW 5: 0,.,= - ALWAYS VISIBLE -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="70dp"
             android:orientation="horizontal">
 
             <Button android:id="@+id/btn0" style="@style/NumberButton.Wide" android:text="0" />

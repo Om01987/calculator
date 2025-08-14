@@ -15,11 +15,13 @@ import net.objecthunter.exp4j.ValidationResult;
 
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvExpression, tvResult, tvModeIndicator;
-    private Button btnToggleMode;
+    private Button btnToggleMode, btnDegRad;
     private LinearLayout layoutAdvanced1, layoutAdvanced2, layoutAdvanced3;
 
     private boolean isAdvancedMode = false;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
         tvResult = findViewById(R.id.tvResult);
         tvModeIndicator = findViewById(R.id.tvModeIndicator);
         btnToggleMode = findViewById(R.id.btnToggleMode);
+        btnDegRad = findViewById(R.id.btnDegRad);
         layoutAdvanced1 = findViewById(R.id.layoutAdvanced1);
         layoutAdvanced2 = findViewById(R.id.layoutAdvanced2);
         layoutAdvanced3 = findViewById(R.id.layoutAdvanced3);
@@ -49,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
     private void setupListeners() {
         // Toggle Mode
         btnToggleMode.setOnClickListener(v -> toggleCalculatorMode());
+
+        // Degree/Radian Toggle
+        btnDegRad.setOnClickListener(v -> toggleDegreeMode());
 
         // Number buttons - ALWAYS WORK
         findViewById(R.id.btn0).setOnClickListener(v -> onNumberClick("0"));
@@ -72,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnDecimal).setOnClickListener(v -> onDecimalClick());
         findViewById(R.id.btnAC).setOnClickListener(v -> clearAll());
         findViewById(R.id.btnBackspace).setOnClickListener(v -> deleteLast());
-        findViewById(R.id.btnPercent).setOnClickListener(v -> applyPercentage());
+        findViewById(R.id.btnPercent).setOnClickListener(v -> applySmartPercentage());
         findViewById(R.id.btnEquals).setOnClickListener(v -> showFinalResult());
 
         // Advanced function buttons
@@ -86,11 +92,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnRightParen).setOnClickListener(v -> onAppendText(")"));
         findViewById(R.id.btnPower).setOnClickListener(v -> onOperatorClick("^"));
         findViewById(R.id.btnPi).setOnClickListener(v -> onConstantClick("π"));
-        findViewById(R.id.btnFactorial).setOnClickListener(v -> onFactorialClick());
         findViewById(R.id.btnE).setOnClickListener(v -> onConstantClick("e"));
-        findViewById(R.id.btnExp).setOnClickListener(v -> onFunctionClick("exp"));
-        findViewById(R.id.btnMod).setOnClickListener(v -> onOperatorClick("mod"));
-        findViewById(R.id.btnAbs).setOnClickListener(v -> onFunctionClick("abs"));
 
         // Live calculation
         tvExpression.addTextChangedListener(new TextWatcher() {
@@ -111,12 +113,18 @@ public class MainActivity extends AppCompatActivity {
     private void toggleCalculatorMode() {
         isAdvancedMode = !isAdvancedMode;
 
-        // ONLY show/hide advanced rows - DON'T touch basic buttons
+        // Show/hide advanced rows
         layoutAdvanced1.setVisibility(isAdvancedMode ? View.VISIBLE : View.GONE);
         layoutAdvanced2.setVisibility(isAdvancedMode ? View.VISIBLE : View.GONE);
         layoutAdvanced3.setVisibility(isAdvancedMode ? View.VISIBLE : View.GONE);
 
         btnToggleMode.setText(isAdvancedMode ? "BASIC" : "ADV");
+        updateModeIndicator();
+    }
+
+    private void toggleDegreeMode() {
+        isDegreeMode = !isDegreeMode;
+        btnDegRad.setText(isDegreeMode ? "DEG" : "RAD");
         updateModeIndicator();
     }
 
@@ -212,17 +220,6 @@ public class MainActivity extends AppCompatActivity {
         tvExpression.append(constant);
     }
 
-    private void onFactorialClick() {
-        if (errorState) clearAll();
-        String currentExpression = tvExpression.getText().toString();
-        if (!currentExpression.isEmpty()) {
-            char lastChar = currentExpression.charAt(currentExpression.length() - 1);
-            if (Character.isDigit(lastChar) || lastChar == ')') {
-                tvExpression.append("!");
-            }
-        }
-    }
-
     private void onAppendText(String text) {
         if (errorState) clearAll();
         if (justCalculated && text.equals("(")) {
@@ -247,8 +244,7 @@ public class MainActivity extends AppCompatActivity {
         String currentExpression = tvExpression.getText().toString();
         if (!currentExpression.isEmpty()) {
             if (currentExpression.endsWith("sin(") || currentExpression.endsWith("cos(") ||
-                    currentExpression.endsWith("tan(") || currentExpression.endsWith("log(") ||
-                    currentExpression.endsWith("exp(") || currentExpression.endsWith("abs(")) {
+                    currentExpression.endsWith("tan(") || currentExpression.endsWith("log(")) {
                 tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 4));
             } else if (currentExpression.endsWith("sqrt(") || currentExpression.endsWith("log10(")) {
                 tvExpression.setText(currentExpression.substring(0, currentExpression.length() - 5));
@@ -259,10 +255,33 @@ public class MainActivity extends AppCompatActivity {
         errorState = false;
     }
 
-    private void applyPercentage() {
+    private void applySmartPercentage() {
         String expression = tvExpression.getText().toString();
-        if (!expression.isEmpty() && !errorState) {
-            try {
+        if (expression.isEmpty() || errorState) return;
+
+        try {
+            // Smart percentage logic: Handle discount/markup scenarios
+            Pattern percentPattern = Pattern.compile("([0-9.]+)([+\\-])([0-9.]+)%$");
+            Matcher matcher = percentPattern.matcher(expression);
+
+            if (matcher.find()) {
+                double baseValue = Double.parseDouble(matcher.group(1));
+                String operator = matcher.group(2);
+                double percentValue = Double.parseDouble(matcher.group(3));
+
+                double result;
+                if (operator.equals("-")) {
+                    // Discount: 100-10% = 100 - (100*10/100) = 90
+                    result = baseValue - (baseValue * percentValue / 100);
+                } else {
+                    // Markup: 100+10% = 100 + (100*10/100) = 110
+                    result = baseValue + (baseValue * percentValue / 100);
+                }
+
+                tvExpression.setText(formatResult(result));
+                justCalculated = true;
+            } else {
+                // Simple percentage conversion
                 String[] parts = expression.split("[+\\-×÷^()]");
                 if (parts.length > 0) {
                     String lastNumber = parts[parts.length - 1].trim();
@@ -273,10 +292,10 @@ public class MainActivity extends AppCompatActivity {
                         tvExpression.setText(newExpression);
                     }
                 }
-            } catch (Exception e) {
-                tvResult.setText("Error: Invalid for %");
-                errorState = true;
             }
+        } catch (Exception e) {
+            tvResult.setText("Error: Invalid for %");
+            errorState = true;
         }
     }
 
@@ -366,12 +385,9 @@ public class MainActivity extends AppCompatActivity {
                 .replace('÷', '/')
                 .replace('−', '-')
                 .replace("π", String.valueOf(Math.PI))
-                .replace("e", String.valueOf(Math.E))
-                .replace("mod", "%");
+                .replace("e", String.valueOf(Math.E));
 
-        result = handleFactorial(result);
         result = handleTrigFunctions(result);
-
         return result;
     }
 
@@ -382,46 +398,6 @@ public class MainActivity extends AppCompatActivity {
             expression = expression.replaceAll("tan\\(([^)]+)\\)", "tan(($1)*" + Math.PI + "/180)");
         }
         return expression;
-    }
-
-    private String handleFactorial(String expression) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < expression.length(); i++) {
-            if (expression.charAt(i) == '!') {
-                int j = i - 1;
-                while (j >= 0 && (Character.isDigit(expression.charAt(j)) || expression.charAt(j) == '.')) {
-                    j--;
-                }
-
-                String numberStr = expression.substring(j + 1, i);
-                if (!numberStr.isEmpty()) {
-                    try {
-                        int number = (int) Double.parseDouble(numberStr);
-                        long factorial = calculateFactorial(number);
-                        result.delete(result.length() - numberStr.length(), result.length());
-                        result.append(factorial);
-                    } catch (Exception e) {
-                        throw new ArithmeticException("Invalid factorial");
-                    }
-                } else {
-                    result.append(expression.charAt(i));
-                }
-            } else {
-                result.append(expression.charAt(i));
-            }
-        }
-        return result.toString();
-    }
-
-    private long calculateFactorial(int n) {
-        if (n < 0) throw new ArithmeticException("Factorial of negative number");
-        if (n > 20) throw new ArithmeticException("Factorial too large");
-
-        long result = 1;
-        for (int i = 2; i <= n; i++) {
-            result *= i;
-        }
-        return result;
     }
 
     private String formatResult(double result) {
