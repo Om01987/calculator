@@ -6,7 +6,7 @@
     android:background="#000000"
     android:clipToPadding="false">
 
-    <!-- TOP: Display Area -->
+    <!-- TOP: Display Area (30% height) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -14,10 +14,9 @@
         android:orientation="vertical"
         android:gravity="bottom"
         android:padding="16dp"
-        android:background="#111111"
-        android:clipToPadding="false">
+        android:background="#111111">
 
-        <!-- Mode Indicator and Toggle -->
+        <!-- Mode Indicator & Toggle -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -74,7 +73,7 @@
             android:padding="4dp" />
     </LinearLayout>
 
-    <!-- BOTTOM: Button Panel -->
+    <!-- BOTTOM: Button Panel (70% height) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -84,7 +83,7 @@
         android:background="#111111"
         android:gravity="bottom">
 
-        <!-- ADVANCED ROW 1: Trigonometric Functions (4 buttons) -->
+        <!-- ADVANCED ROW 1 (4 buttons) -->
         <LinearLayout
             android:id="@+id/layoutAdvanced1"
             android:layout_width="match_parent"
@@ -99,7 +98,7 @@
             <Button android:id="@+id/btnDegRad" style="@style/AdvancedButton" android:text="DEG" />
         </LinearLayout>
 
-        <!-- ADVANCED ROW 2: Math Functions (4 buttons) -->
+        <!-- ADVANCED ROW 2 (4 buttons) -->
         <LinearLayout
             android:id="@+id/layoutAdvanced2"
             android:layout_width="match_parent"
@@ -114,7 +113,7 @@
             <Button android:id="@+id/btnPower" style="@style/AdvancedButton" android:text="x^y" />
         </LinearLayout>
 
-        <!-- ADVANCED ROW 3: Special Functions & Constants (4 buttons) -->
+        <!-- ADVANCED ROW 3 (4 buttons) -->
         <LinearLayout
             android:id="@+id/layoutAdvanced3"
             android:layout_width="match_parent"
@@ -126,10 +125,10 @@
             <Button android:id="@+id/btnLeftParen" style="@style/AdvancedButton" android:text="(" />
             <Button android:id="@+id/btnRightParen" style="@style/AdvancedButton" android:text=")" />
             <Button android:id="@+id/btnPi" style="@style/AdvancedButton" android:text="π" />
-            <Button android:id="@+id/btnE" style="@style/AdvancedButton" android:text="e" />
+            <Button android:id="@+id/btnFactorial" style="@style/AdvancedButton" android:text="x!" />
         </LinearLayout>
 
-        <!-- BASIC ROW 1: Functions - ALWAYS VISIBLE -->
+        <!-- BASIC ROW 1 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="70dp"
@@ -142,7 +141,7 @@
             <Button android:id="@+id/btnDivide" style="@style/OperatorButton" android:text="÷" />
         </LinearLayout>
 
-        <!-- BASIC ROW 2: 7,8,9,× - ALWAYS VISIBLE -->
+        <!-- BASIC ROW 2 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="70dp"
@@ -155,7 +154,7 @@
             <Button android:id="@+id/btnMultiply" style="@style/OperatorButton" android:text="×" />
         </LinearLayout>
 
-        <!-- BASIC ROW 3: 4,5,6,− - ALWAYS VISIBLE -->
+        <!-- BASIC ROW 3 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="70dp"
@@ -168,7 +167,7 @@
             <Button android:id="@+id/btnSubtract" style="@style/OperatorButton" android:text="−" />
         </LinearLayout>
 
-        <!-- BASIC ROW 4: 1,2,3,+ - ALWAYS VISIBLE -->
+        <!-- BASIC ROW 4 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="70dp"
@@ -181,7 +180,7 @@
             <Button android:id="@+id/btnAdd" style="@style/OperatorButton" android:text="+" />
         </LinearLayout>
 
-        <!-- BASIC ROW 5: 0,.,= - ALWAYS VISIBLE -->
+        <!-- BASIC ROW 5 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="70dp"

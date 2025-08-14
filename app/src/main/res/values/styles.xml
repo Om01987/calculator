@@ -43,7 +43,7 @@
         <item name="android:textColor">#000000</item>
     </style>
 
-    <!-- Advanced Buttons - Perfect Spacing -->
+    <!-- Advanced Buttons -->
     <style name="AdvancedButton" parent="BaseButton">
         <item name="android:background">@drawable/bg_advanced</item>
         <item name="android:textSize">16sp</item>
